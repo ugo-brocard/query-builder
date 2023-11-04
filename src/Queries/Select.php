@@ -3,7 +3,7 @@ declare(strict_types = 1);
 
 namespace QueryBuilder\Queries;
 
-use QueryBuilder\Condition;
+use QueryBuilder\Queries\Parts\SQLCondition;
 use QueryBuilder\Queries\Traits\{Alias, Order};
 
 /**
@@ -14,13 +14,6 @@ use QueryBuilder\Queries\Traits\{Alias, Order};
 class Select implements Query
 {
     use Alias, Order;
-
-    /**
-     * Variable fields
-     * 
-     * @var array
-     */
-    protected array $fields  = [];
 
     /**
      * Variable where
@@ -65,26 +58,12 @@ class Select implements Query
     protected int $offset;
 
     /**
-     * Select's constructor
-     * 
-     * @param string $columns 
-     * @return void 
-     */
-    public function __construct(string ...$columns) {
-        if (!$columns) {
-            $columns = ["*"];
-        }
-
-        $this->fields = $columns;
-    }
-
-    /**
      * Method where
      * 
-     * @param Condition $condition 
+     * @param SQLCondition $conditions 
      * @return Select 
      */
-    public function where(Condition ...$conditions): self
+    public function where(SQLCondition ...$conditions): self
     {
         foreach ($conditions as $condition) {
             $where = array($condition->getStatement() => $condition->getValues());
@@ -97,10 +76,10 @@ class Select implements Query
     /**
      * Method having
      * 
-     * @param Condition $condition 
+     * @param SQLCondition $conditions
      * @return Select 
      */
-    public function having(Condition ...$conditions): self
+    public function having(SQLCondition ...$conditions): self
     {
         foreach ($conditions as $condition) {
             $having = array($condition->getStatement() => $condition->getValues());
@@ -113,7 +92,7 @@ class Select implements Query
     /**
      * Method groupBy
      * 
-     * @param string[] $columns 
+     * @param string $columns 
      * @return Select 
      */
     public function groupBy(string ...$columns): self
@@ -122,6 +101,12 @@ class Select implements Query
         return $this;
     }
 
+    /**
+     * Method orderBy
+     * 
+     * @param string $columns 
+     * @return Select 
+     */
     public function orderBy(string ...$columns): self
     {
         foreach ($columns as $column) {

@@ -1,20 +1,20 @@
 <?php
 declare(strict_types = 1);
 
-namespace QueryBuilder;
+namespace QueryBuilder\Queries\Parts;
 
 use Exception;
 use QueryBuilder\Exceptions\InvalidConditionException;
 
 /**
- * Class Condition
+ * Class SQLCondition
  * 
  * @package QueryBuilder
  * 
  * @author Ugo Brocard
  * @license MIT
  */
-class Condition
+class SQLCondition
 {
     const REGEX_SQL_OPERATOR_IN      = "/^(?:NOT\s)?IN$/";
     const REGEX_SQL_OPERATOR_LIKE    = "/^(?:NOT\s)?LIKE$/";
@@ -40,7 +40,7 @@ class Condition
     /**
      * Method __construct
      * 
-     * @param Condition|array $condition 
+     * @param SQLCondition|array $condition 
      * @return void 
      */
     public function __construct(self|array $condition)
@@ -51,8 +51,8 @@ class Condition
     /**
      * Method and
      * 
-     * @param Condition|array $condition 
-     * @return Condition 
+     * @param SQLCondition|array $condition 
+     * @return SQLCondition 
      */
     public function and(self|array $condition): self
     {
@@ -63,8 +63,8 @@ class Condition
     /**
      * Method or
      * 
-     * @param Condition|array $condition 
-     * @return Condition 
+     * @param SQLCondition|array $condition 
+     * @return SQLCondition 
      */
     public function or(self|array $condition): self
     {
@@ -73,29 +73,9 @@ class Condition
     }
 
     /**
-     * Method getStatement
-     * 
-     * @return string 
-     */
-    public function getStatement(): string
-    {
-        return $this->statement;
-    }
-
-    /**
-     * Method getValues
-     * 
-     * @return array
-     */
-    public function getValues(): array
-    {
-        return $this->values;
-    }
-
-    /**
      * Method resolveCondition
      * 
-     * @param Condition|array $condition 
+     * @param SQLCondition|array $condition 
      * @return string 
      */
     protected function resolveCondition(self|array $condition): string
@@ -120,7 +100,7 @@ class Condition
         if (sizeof($condition) < 2) {
             throw new InvalidConditionException;
         }
-
+        
         $column   = $condition[0];
         if (!is_string($column)) {
             throw new InvalidConditionException("Columns must be of type string");
@@ -130,7 +110,7 @@ class Condition
         if (!is_string($operator)) {
             throw new InvalidConditionException("Operators must be of type string");
         }
-
+        
         if (preg_match(self::REGEX_SQL_OPERATOR_IS_NULL, $operator)) {
             $statement = $this->isNull($column, $operator);
         }
@@ -138,35 +118,35 @@ class Condition
         if (sizeof($condition) < 3) {
             throw new InvalidConditionException;
         }
-
+        
         if (preg_match(self::REGEX_SQL_OPERATOR_IN, $operator)) {
             [ $statement, $values ] = $this->in($column, $operator, $condition[2]);
         }
-
+        
         if (preg_match(self::REGEX_SQL_OPERATOR_LIKE, $operator)) {
             [ $statement, $values ] = $this->like($column, $operator, $condition[2]);
         }
-
+        
         if (preg_match(self::REGEX_SQL_OPERATOR_BETWEEN, $operator)) {
             [ $statement, $values ] = $this->between($column, $operator, $condition[2]);
         }
-
+        
         if (preg_match(self::REGEX_SQL_OPERATOR_FILTER, $operator)) {
             $statement = $this->filter($column, $operator, $condition[2])[0];
             $values    = array($this->filter($column, $operator, $condition[2])[1]);
         }
-
+        
         if (!isset($statement)) {
             throw new InvalidConditionException;
         }
-
+        
         if (isset($values)) {
             $this->values = array_merge($this->values, $values);
         }
-
+        
         return $statement;
     }
-
+    
     /**
      * Method isNull
      * 
@@ -178,7 +158,7 @@ class Condition
     {
         return "{$column} {$operator}";
     }
-
+    
     /**
      * Method in
      * 
@@ -194,7 +174,7 @@ class Condition
         
         return array($statement, $values);
     }
-
+    
     /**
      * Method like
      * 
@@ -223,10 +203,10 @@ class Condition
     {
         $statement = "{$column} {$operator} ? AND ?";
         $values    = array($values[0], $values[1]);
-    
+        
         return array($statement, $values);
     }
-
+    
     /**
      * Method filter
      * 
@@ -239,5 +219,25 @@ class Condition
     {
         $statement = "{$column} {$operator} ?";
         return array($statement, $value);
+    }
+
+    /**
+     * Method getStatement
+     * 
+     * @return string 
+     */
+    public function getStatement(): string
+    {
+        return $this->statement;
+    }
+    
+    /**
+     * Method getValues
+     * 
+     * @return array
+     */
+    public function getValues(): array
+    {
+        return $this->values;
     }
 }
